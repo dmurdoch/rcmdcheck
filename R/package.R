@@ -103,6 +103,20 @@ NULL
 #'   environment variable. If that is not set, then `"never"` is used.
 #' @param env A named character vector, extra environment variables to
 #'   set in the check process.
+#' @param demote A list describing requested reductions in severity
+#'   of `ERROR`s, `WARNING`s or `NOTES`.   Any `ERROR` matching
+#'   a pattern in `demote$errors` will be demoted to a `WARNING`;
+#'   a `WARNING` matching a pattern in `demote$warnings` will be
+#'   demoted to a `NOTE`, and a `NOTE` matching a pattern in
+#'   `demote$notes` will be removed from the result.  Demotions
+#'   are processed in this order, so a message could be demoted two
+#'   or three times by including its pattern in multiple entries.
+#' @param promote A list describing requested increases in severity of
+#'   `WARNING`s or `NOTE`s.  Any `NOTE` matching a pattern in
+#'   `promote$notes` will be promoted to a `WARNING` and any `WARNING`
+#'    matching a pattern in `promote$warnings` will be counted as an
+#'    `ERROR`.  Promotions are processed in this order after
+#'    demotions.
 #' @return An S3 object (list) with fields `errors`,
 #'   `warnings` and `notes`. These are all character
 #'   vectors containing the output for the failed check.
@@ -126,7 +140,12 @@ rcmdcheck <- function(
       "RCMDCHECK_ERROR_ON",
       c("never", "error", "warning", "note")[1]
     ),
-    env = character()) {
+    env = character(),
+    demote = list(errors = NULL,
+                  warnings = NULL,
+                  notes = NULL),
+    promote = list(notes = NULL,
+                   warnings = NULL)) {
 
   error_on <- match.arg(error_on, c("never", "error", "warning", "note"))
 
@@ -184,6 +203,8 @@ rcmdcheck <- function(
 
   # Automatically delete temporary files when this object disappears
   if (cleanup) res$cleaner <- auto_clean(check_dir)
+
+  res <- process_demotions_and_promotions(res, demote, promote)
 
   handle_error_on(res, error_on)
 

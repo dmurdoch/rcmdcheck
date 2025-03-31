@@ -2,6 +2,7 @@
 % Please edit documentation in R/package.R
 \docType{package}
 \name{rcmdcheck}
+\alias{rcmdcheck-package}
 \alias{rcmdcheck}
 \title{Run R CMD check from R and Capture Results}
 \usage{
@@ -15,7 +16,9 @@ rcmdcheck(
   repos = getOption("repos"),
   timeout = Inf,
   error_on = Sys.getenv("RCMDCHECK_ERROR_ON", c("never", "error", "warning", "note")[1]),
-  env = character()
+  env = character(),
+  demote = list(errors = NULL, warnings = NULL, notes = NULL),
+  promote = list(notes = NULL, warnings = NULL)
 )
 }
 \arguments{
@@ -68,6 +71,22 @@ environment variable. If that is not set, then \code{"never"} is used.}
 
 \item{env}{A named character vector, extra environment variables to
 set in the check process.}
+
+\item{demote}{A list describing requested reductions in severity
+of \code{ERROR}s, \code{WARNING}s or \code{NOTES}.   Any \code{ERROR} matching
+a pattern in \code{demote$errors} will be demoted to a \code{WARNING};
+a \code{WARNING} matching a pattern in \code{demote$warnings} will be
+demoted to a \code{NOTE}, and a \code{NOTE} matching a pattern in
+\code{demote$notes} will be removed from the result.  Demotions
+are processed in this order, so a message could be demoted two
+or three times by including its pattern in multiple entries.}
+
+\item{promote}{A list describing requested increases in severity of
+\code{WARNING}s or \code{NOTE}s.  Any \code{NOTE} matching a pattern in
+\code{promote$notes} will be promoted to a \code{WARNING} and any \code{WARNING}
+matching a pattern in \code{promote$warnings} will be counted as an
+\code{ERROR}.  Promotions are processed in this order after
+demotions.}
 }
 \value{
 An S3 object (list) with fields \code{errors},
@@ -135,3 +154,22 @@ Note that \code{Config/rcmdcheck/ignore-inconsequential-notes} and the
 \verb{R CMD check} from a shell (or GUI) will not use them.
 }
 
+\seealso{
+Useful links:
+\itemize{
+  \item \url{https://rcmdcheck.r-lib.org/}
+  \item \url{https://github.com/r-lib/rcmdcheck#readme}
+  \item Report bugs at \url{https://github.com/r-Lib/rcmdcheck/issues}
+}
+
+}
+\author{
+\strong{Maintainer}: Gábor Csárdi \email{csardi.gabor@gmail.com}
+
+Other contributors:
+\itemize{
+  \item Mango Solutions [copyright holder, funder]
+  \item Posit Software, PBC [copyright holder, funder]
+}
+
+}
