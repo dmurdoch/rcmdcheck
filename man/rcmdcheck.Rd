@@ -16,9 +16,7 @@ rcmdcheck(
   repos = getOption("repos"),
   timeout = Inf,
   error_on = Sys.getenv("RCMDCHECK_ERROR_ON", c("never", "error", "warning", "note")[1]),
-  env = character(),
-  demote = list(errors = NULL, warnings = NULL, notes = NULL),
-  promote = list(notes = NULL, warnings = NULL)
+  env = character()
 )
 }
 \arguments{
@@ -71,22 +69,6 @@ environment variable. If that is not set, then \code{"never"} is used.}
 
 \item{env}{A named character vector, extra environment variables to
 set in the check process.}
-
-\item{demote}{A list describing requested reductions in severity
-of \code{ERROR}s, \code{WARNING}s or \code{NOTES}.   Any \code{ERROR} matching
-a pattern in \code{demote$errors} will be demoted to a \code{WARNING};
-a \code{WARNING} matching a pattern in \code{demote$warnings} will be
-demoted to a \code{NOTE}, and a \code{NOTE} matching a pattern in
-\code{demote$notes} will be removed from the result.  Demotions
-are processed in this order, so a message could be demoted two
-or three times by including its pattern in multiple entries.}
-
-\item{promote}{A list describing requested increases in severity of
-\code{WARNING}s or \code{NOTE}s.  Any \code{NOTE} matching a pattern in
-\code{promote$notes} will be promoted to a \code{WARNING} and any \code{WARNING}
-matching a pattern in \code{promote$warnings} will be counted as an
-\code{ERROR}.  Promotions are processed in this order after
-demotions.}
 }
 \value{
 An S3 object (list) with fields \code{errors},
@@ -152,6 +134,27 @@ environment variables that control the checks.
 Note that \code{Config/rcmdcheck/ignore-inconsequential-notes} and the
 \code{check.env} file are only supported by rcmdcheck, and running
 \verb{R CMD check} from a shell (or GUI) will not use them.
+}
+
+\section{Changing the severity of issues}{
+A third approach to deal with specific issues is to allow the
+checks to proceed, but to modify the severity of the \code{rcmdcheck}
+response to them.  For example, include this line in \code{DESCRIPTION}:
+
+\if{html}{\out{<div class="sourceCode">}}\preformatted{Config/rcmdcheck/demote/errors: Packages suggested but not available
+}\if{html}{\out{</div>}}
+
+If any errors contain the given text, they will be demoted to
+warnings in the check.  Multiple patterns can be given, separated
+by newlines, but the tag (\code{Config/rcmdcheck/demote/errors}) should
+only appear once. The full set of change requests is
+\code{.../demote/errors}, \code{.../demote/warnings}, \code{.../demote/notes},
+\code{.../promote/notes}, \code{.../promote/warnings} (where \code{...} is the
+prefix \code{Config/rcmdcheck}).
+These changes will be processed in that order.  In fact, an
+error could be demoted to a note by including it in both
+\code{demote/errors} and \code{demote/warnings}.  A demoted note will
+not be counted at all.
 }
 
 \seealso{

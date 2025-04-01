@@ -62,6 +62,26 @@ NULL
 #' `check.env` file are only supported by rcmdcheck, and running
 #' `R CMD check` from a shell (or GUI) will not use them.
 #'
+#' # Changing the severity of issues
+#'
+#' A third approach to deal with specific issues is to allow the
+#' checks to proceed, but to modify the severity of the `rcmdcheck`
+#' response to them.  For example, include this line in `DESCRIPTION`:
+#' ```
+#' Config/rcmdcheck/demote/errors: Packages suggested but not available
+#' ```
+#' If any errors contain the given text, they will be demoted to
+#' warnings in the check.  Multiple patterns can be given, separated
+#' by newlines, but the tag (`Config/rcmdcheck/demote/errors`) should
+#' only appear once. The full set of change requests is
+#' `.../demote/errors`, `.../demote/warnings`, `.../demote/notes`,
+#' `.../promote/notes`, `.../promote/warnings` (where `...` is the
+#' prefix `Config/rcmdcheck`).
+#' These changes will be processed in that order.  In fact, an
+#' error could be demoted to a note by including it in both
+#' `demote/errors` and `demote/warnings`.  A demoted note will
+#' not be counted at all.
+#'
 #' @param path Path to a package tarball or a directory.
 #' @param quiet Whether to print check output during checking.
 #' @param args Character vector of arguments to pass to `R CMD check`. Pass each
@@ -103,20 +123,6 @@ NULL
 #'   environment variable. If that is not set, then `"never"` is used.
 #' @param env A named character vector, extra environment variables to
 #'   set in the check process.
-#' @param demote A list describing requested reductions in severity
-#'   of `ERROR`s, `WARNING`s or `NOTES`.   Any `ERROR` matching
-#'   a pattern in `demote$errors` will be demoted to a `WARNING`;
-#'   a `WARNING` matching a pattern in `demote$warnings` will be
-#'   demoted to a `NOTE`, and a `NOTE` matching a pattern in
-#'   `demote$notes` will be removed from the result.  Demotions
-#'   are processed in this order, so a message could be demoted two
-#'   or three times by including its pattern in multiple entries.
-#' @param promote A list describing requested increases in severity of
-#'   `WARNING`s or `NOTE`s.  Any `NOTE` matching a pattern in
-#'   `promote$notes` will be promoted to a `WARNING` and any `WARNING`
-#'    matching a pattern in `promote$warnings` will be counted as an
-#'    `ERROR`.  Promotions are processed in this order after
-#'    demotions.
 #' @return An S3 object (list) with fields `errors`,
 #'   `warnings` and `notes`. These are all character
 #'   vectors containing the output for the failed check.
@@ -140,12 +146,7 @@ rcmdcheck <- function(
       "RCMDCHECK_ERROR_ON",
       c("never", "error", "warning", "note")[1]
     ),
-    env = character(),
-    demote = list(errors = NULL,
-                  warnings = NULL,
-                  notes = NULL),
-    promote = list(notes = NULL,
-                   warnings = NULL)) {
+    env = character()) {
 
   error_on <- match.arg(error_on, c("never", "error", "warning", "note"))
 
@@ -204,7 +205,7 @@ rcmdcheck <- function(
   # Automatically delete temporary files when this object disappears
   if (cleanup) res$cleaner <- auto_clean(check_dir)
 
-  res <- process_demotions_and_promotions(res, demote, promote)
+  res <- process_demotions_and_promotions(res, desc)
 
   handle_error_on(res, error_on)
 
